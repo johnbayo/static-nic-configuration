@@ -1,0 +1,4 @@
+---
+# vars file for static-nic-configuration
+custom_routes:
+  - { interface_name: lan0, interface_route: "169.254.169.254/32 via {{ ansible_default_ipv4.gateway }} dev eth0" }

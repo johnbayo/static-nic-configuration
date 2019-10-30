@@ -1,0 +1,15 @@
+---
+# tasks file for nic-configuration
+- name: configure all routes to be static
+  include_tasks: routes.yml
+
+- name: check if dhcp is configured
+  shell: ls -l /run/dhclient-*.pid
+  register: result
+  ignore_errors: True
+
+- meta: end_play
+  when: result is failed
+
+- include_tasks: interfaces.yml
+  when: result.stdout_lines is defined

@@ -1,0 +1,35 @@
+---
+- name: find connection test
+  command: nmcli -t -f NAME connection
+  register: interfaces
+
+- name: Get IP address for each connection
+  shell: nmcli connection show "{{ item }}" | grep IP4.ADDRESS | awk '{print $2}'
+  with_items: "{{ interfaces.stdout_lines }}"
+  register: int_name
+
+- name: Populate Connection and IP address
+  set_fact:
+    con: "{{ con|default([]) + [ {'con_name': item.item, 'con_ip': item.stdout} ] }}"
+  with_items: "{{ int_name.results }}"
+
+- name: modify ipv4 address
+  shell: nmcli connection modify "{{ item.con_name }}" ipv4.addresses "{{ item.con_ip }}"
+  with_items: "{{ con }}"
+
+- name: set dhcp to static
+  shell: nmcli connection modify "{{ item.con_name }}" ipv4.method manual
+  with_items: "{{ con }}"
+
+- name: add dns servers 
+  shell: nmcli connection modify "{{ item.con_name }}" ipv4.dns "{{ ansible_facts['dns']['nameservers'][0] }},{{ ansible_facts['dns']['nameservers'][1] }}"
+  with_items: "{{ con }}"
+
+- name: find eth0
+  shell: nmcli device show eth0 | awk '/GENERAL.CONNECTION/ { printf $2; for (i=3; i <= NF; i++) printf FS$i }'
+  register: eth0
+
+- name: configure gateway on eth0 only
+  shell: nmcli connection modify "{{ item.con_name }}" ipv4.gateway "{{ ansible_default_ipv4.gateway }}" 
+  with_items: "{{ con }}"
+  when: eth0.stdout == "{{ item.con_name }}"

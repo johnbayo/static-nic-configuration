@@ -1,0 +1,5 @@
+---
+# handlers file for static-nic-configuration
+- name: reboot server
+  reboot:
+    reboot_timeout: 300

@@ -1,0 +1,11 @@
+---
+- name: configure custom static routes
+  copy:
+    dest: /etc/sysconfig/network-scripts/route-{{ item.interface_name }}
+    force: yes
+    mode: "u=rw,g=r,o=r"
+    content: |
+        {{ item.interface_route }}
+  with_items: "{{ custom_routes }}"
+  notify:
+    - reboot server
